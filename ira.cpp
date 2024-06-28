@@ -83,12 +83,15 @@ bool isValidNumber(std::string& str)
 	return true; 
 }
 
+vector<string> identifiers;
+bool shouldBeIdentifier = false;
 Token tokenizeWord(string word) {
 	Token token = { INTEGER , { -1, -1}, ""};
 	
 	if (word == ":") {
 		token.type  = OPERATOR;
 		token.value = std::to_string(ASSIGN);
+		shouldBeIdentifier = true;
 	}else if(word == "print"){
 		token.type = KEYWORD;
 		token.value = std::to_string(PRINT);
@@ -100,7 +103,23 @@ Token tokenizeWord(string word) {
 			token.value = word;
 		}
 		else {
-			printerr ("invalid token");
+			if(shouldBeIdentifier){
+				token.type = IDENTIFIER;
+				token.value = word;
+				shouldBeIdentifier = false;
+				identifiers.push_back(word);
+				return token;
+			}
+
+			for(string idn : identifiers){
+				if (idn == word){
+					token.type = IDENTIFIER;
+					token.value = word;
+					return token;
+				}
+			}
+
+			printerr ("invalid token " << word);
 			exit(-1);
 		}
 	}
@@ -186,7 +205,7 @@ void viewProgram(vector<Token> program){
     cout << endl;
 }
 
-void execute( vector<Token> program){
+void execute(vector<Token> program){
 
 	Context context;
 
@@ -195,6 +214,26 @@ void execute( vector<Token> program){
 		if (token.type == INTEGER || token.type == STRING){
 			Chunk chunk = {token.type, token.value};
 			context.memory.push_back(chunk);
+		}
+		if (token.type == IDENTIFIER){
+			for(auto var: context.strings) {
+				if (var.name == token.value){
+					Chunk chunk = {token.type, var.value};
+					context.memory.push_back(chunk);
+				}
+			}
+			for(auto var: context.floats) {
+				if (var.name == token.value){
+					Chunk chunk = {token.type, std::to_string(var.value)};
+					context.memory.push_back(chunk);
+				}
+			}
+			for(auto var: context.integers) {
+				if (var.name == token.value){
+					Chunk chunk = {token.type, std::to_string(var.value)};
+					context.memory.push_back(chunk);
+				}
+			}
 		}
 		if (token.type == OPERATOR){
 			OperatorCode oc = (OperatorCode)std::stoi(token.value);
