@@ -1,0 +1,10 @@
+*
+!*.*
+!*/
+!Makefile
+*.swp
+.vscode
+*.out
+*.o
+*.asm
+syntax.ira
