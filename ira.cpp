@@ -301,7 +301,9 @@ void execute(vector<Token> program){
 				}
 			}
 		}
-		//viewContext(context);
+#if debug
+		viewContext(context);
+#endif
 	}
 	
 }
@@ -320,6 +322,8 @@ int main(int argc, char** argv){
 		for(Token token : tokens) program.push_back(token);
 	}
 
+#if debug
 	viewProgram(program);
+#endif
 	execute(program);
 }
