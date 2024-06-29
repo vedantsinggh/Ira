@@ -28,6 +28,12 @@ enum TokenType {
 
 enum OperatorCode {
 	ASSIGN,
+	EQUALS,
+	ADD,
+	MINUS,
+	MULTIPLY,
+	DIVIDE,
+	MOD,
 };
 
 enum KeywordCode {
@@ -105,7 +111,21 @@ Token tokenizeWord(string word) {
 	}else if(word == "print"){
 		token.type  = KEYWORD;
 		token.value = std::to_string(PRINT);
-		
+	}else if(word == "+"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(ADD);
+	}else if(word == "-"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(MINUS);
+	}else if(word == "*"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(MULTIPLY);
+	}else if(word == "/"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(DIVIDE);
+	}else if(word == "%"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(MOD);
 	}else{
 		if (isValidNumber(word)) {
 			token.type  = INTEGER;
@@ -276,9 +296,9 @@ void execute(vector<Token> program){
 		}
 		if (token.type == OPERATOR){
 			OperatorCode oc = (OperatorCode)std::stoi(token.value);
-			Token nextToken = program[++i];
 			switch (oc){
 				case ASSIGN: {
+					Token nextToken = program[++i];
 					if (nextToken.type == IDENTIFIER){
 						//TODO: check if the identifier is valid
 						Chunk prevData = pop(context.memory);
@@ -294,6 +314,125 @@ void execute(vector<Token> program){
 						}
 					}
 					break;
+				}
+				case ADD: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						auto res = b.value + a.value;
+						Chunk resChunk = {.type = STRING, .value = res};
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						auto res = std::stof(b.value) + std::stof(a.value);
+						Chunk resChunk = {.type = FLOAT, .value = std::to_string(res)};
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					auto res = std::stoi(b.value) + std::stoi(a.value);
+					Chunk resChunk = {.type = INTEGER, .value = std::to_string(res)};
+					context.memory.push_back(resChunk);
+					break;
+
+				}
+				case MINUS: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+
+					if (a.type == STRING && b.type == STRING){
+						printerr("Cannot subtract string");
+						exit(-1);
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						auto res = std::stof(b.value) - std::stof(a.value);
+						Chunk resChunk = {.type = FLOAT, .value = std::to_string(res)};
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					auto res = std::stoi(b.value) - std::stoi(a.value);
+					Chunk resChunk = {.type = INTEGER, .value = std::to_string(res)};
+					context.memory.push_back(resChunk);
+					break;
+
+				}
+				case MULTIPLY: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+
+					if (a.type == STRING && b.type == STRING){
+						printerr("Cannot multiply string");
+						exit(-1);
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						auto res = std::stof(b.value) * std::stof(a.value);
+						Chunk resChunk = {.type = FLOAT, .value = std::to_string(res)};
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					auto res = std::stoi(b.value) * std::stoi(a.value);
+					Chunk resChunk = {.type = INTEGER, .value = std::to_string(res)};
+					context.memory.push_back(resChunk);
+					break;
+
+				}
+				case DIVIDE: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+
+					if (a.type == STRING && b.type == STRING){
+						printerr("Cannot divide string!");
+						exit(-1);
+					}
+
+					if(std::stof(a.value) == 0){
+						printerr("Cannot divide by zero!");
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						auto res = std::stof(b.value) / std::stof(a.value);
+						Chunk resChunk = {.type = FLOAT, .value = std::to_string(res)};
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					auto res = std::stoi(b.value) / std::stoi(a.value);
+					Chunk resChunk = {.type = INTEGER, .value = std::to_string(res)};
+					context.memory.push_back(resChunk);
+					break;
+
+				}
+				case MOD: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+
+					if (a.type == STRING && b.type == STRING){
+						printerr("Cannot divide string!");
+						exit(-1);
+					}
+
+					if(std::stof(a.value) == 0){
+						printerr("Cannot divide by zero!");
+						exit(-1);
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						printerr("Cannot mod floats!");
+					}
+
+					auto res = std::stoi(b.value) % std::stoi(a.value);
+					Chunk resChunk = {.type = INTEGER, .value = std::to_string(res)};
+					context.memory.push_back(resChunk);
+					break;
+
 				}
 				default:{
 					printerr("Invalid operator encountered!");
@@ -315,11 +454,11 @@ void execute(vector<Token> program){
 				}
 			}
 		}
+	}
 #if debug
 		viewContext(context);
 #endif
-	}
-	
+
 }
 
 int main(int argc, char** argv){
@@ -336,8 +475,8 @@ int main(int argc, char** argv){
 		for(Token token : tokens) program.push_back(token);
 	}
 
+	execute(program);
 #if debug
 	viewProgram(program);
 #endif
-	execute(program);
 }
