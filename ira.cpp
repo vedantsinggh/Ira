@@ -21,6 +21,7 @@ enum TokenType {
 	INTEGER,
 	FLOAT,
 	STRING,
+	BOOL,
 	IDENTIFIER,
 	OPERATOR,
 	KEYWORD,
@@ -28,16 +29,22 @@ enum TokenType {
 
 enum OperatorCode {
 	ASSIGN,
-	EQUALS,
 	ADD,
 	MINUS,
 	MULTIPLY,
 	DIVIDE,
 	MOD,
+	EQUALS,
+	GT,
+	ST,
+	GTE,
+	STE
 };
 
 enum KeywordCode {
 	PRINT,
+	FALSE,
+	TRUE
 };
 
 struct Token {
@@ -126,6 +133,21 @@ Token tokenizeWord(string word) {
 	}else if(word == "%"){
 		token.type  = OPERATOR;
 		token.value = std::to_string(MOD);
+	}else if(word == "=="){
+		token.type  = OPERATOR;
+		token.value = std::to_string(EQUALS);
+	}else if(word == "<"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(ST);
+	}else if(word == ">"){
+		token.type  = OPERATOR;
+		token.value = std::to_string(GT);
+	}else if(word == "<="){
+		token.type  = OPERATOR;
+		token.value = std::to_string(STE);
+	}else if(word == ">="){
+		token.type  = OPERATOR;
+		token.value = std::to_string(GTE);
 	}else{
 		if (isValidNumber(word)) {
 			token.type  = INTEGER;
@@ -434,6 +456,116 @@ void execute(vector<Token> program){
 					break;
 
 				}
+				case EQUALS: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+					Chunk resChunk = {.type = BOOL, .value = std::to_string(FALSE)};
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						resChunk.value = b.value == a.value ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						resChunk.value = std::stof(b.value) == std::stof(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					resChunk.value = std::stoi(b.value) == std::stoi(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+					context.memory.push_back(resChunk);
+					break;
+				}
+				case GT: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+					Chunk resChunk = {.type = BOOL, .value = std::to_string(FALSE)};
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						resChunk.value = b.value > a.value ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						resChunk.value = std::stof(b.value) > std::stof(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					resChunk.value = std::stoi(b.value) > std::stoi(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+					context.memory.push_back(resChunk);
+					break;
+				}
+				case ST: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+					Chunk resChunk = {.type = BOOL, .value = std::to_string(FALSE)};
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						resChunk.value = b.value < a.value ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						resChunk.value = std::stof(b.value) < std::stof(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					resChunk.value = std::stoi(b.value) < std::stoi(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+					context.memory.push_back(resChunk);
+					break;
+				}
+				case GTE: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+					Chunk resChunk = {.type = BOOL, .value = std::to_string(FALSE)};
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						resChunk.value = b.value >= a.value ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						resChunk.value = std::stof(b.value) >= std::stof(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					resChunk.value = std::stoi(b.value) >= std::stoi(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+					context.memory.push_back(resChunk);
+					break;
+				}
+				case STE: {
+					Chunk a = pop(context.memory);
+					Chunk b = pop(context.memory);
+					Chunk resChunk = {.type = BOOL, .value = std::to_string(FALSE)};
+
+					//TODO: throw error when both types are incompatible.
+					if (a.type == STRING && b.type == STRING){
+						resChunk.value = b.value <= a.value ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					if (a.type == FLOAT || b.type == FLOAT){
+						resChunk.value = std::stof(b.value) <= std::stof(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+						context.memory.push_back(resChunk);
+						break;
+					}
+
+					resChunk.value = std::stoi(b.value) <= std::stoi(a.value) ? std::to_string(TRUE) : std::to_string(FALSE);
+					context.memory.push_back(resChunk);
+					break;
+				}
 				default:{
 					printerr("Invalid operator encountered!");
 					exit(-1);
@@ -449,6 +581,14 @@ void execute(vector<Token> program){
 						exit(-1);
 					}
 					Chunk prevData = pop(context.memory);
+
+					if(prevData.type == BOOL){
+						if(std::stoi(prevData.value) == TRUE)
+							println("true");
+						else
+							println("false");
+						break;
+					}
 					println(prevData.value);
 					break;	
 				}
