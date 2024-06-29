@@ -83,6 +83,17 @@ bool isValidNumber(std::string& str)
 	return true; 
 }
 
+bool isValidFloat(std::string& str)
+{
+	for (char ch : str) {
+	    int v = ch;
+	    if (!(ch >= 48 && ch <= 57 || ch == '.')) {
+		return false;
+	    }
+	}
+	return true;
+}
+
 vector<string> identifiers;
 bool shouldBeIdentifier = false;
 Token tokenizeWord(string word) {
@@ -98,6 +109,9 @@ Token tokenizeWord(string word) {
 	}else{
 		if (isValidNumber(word)) {
 			token.type  = INTEGER;
+			token.value = word;
+		}else if(isValidFloat(word)){
+			token.type  = FLOAT;
 			token.value = word;
 		}
 		else {
@@ -236,7 +250,7 @@ void execute(vector<Token> program){
 
 	for(int i=0; i < (int)program.size(); ++i){
 		Token token = program[i];
-		if (token.type == INTEGER || token.type == STRING){
+		if (token.type == INTEGER || token.type == STRING || token.type == FLOAT){
 			Chunk chunk = {token.type, token.value};
 			context.memory.push_back(chunk);
 		}
