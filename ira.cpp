@@ -87,22 +87,26 @@ vector<string> identifiers;
 bool shouldBeIdentifier = false;
 Token tokenizeWord(string word) {
 	Token token = { INTEGER , { -1, -1}, ""};
-	
 	if (word == ":") {
 		token.type  = OPERATOR;
 		token.value = std::to_string(ASSIGN);
 		shouldBeIdentifier = true;
 	}else if(word == "print"){
-		token.type = KEYWORD;
+		token.type  = KEYWORD;
 		token.value = std::to_string(PRINT);
 		
-	}
-	else{
+	}else{
 		if (isValidNumber(word)) {
 			token.type  = INTEGER;
 			token.value = word;
 		}
 		else {
+			if(word[0] == '\"'){
+				token.type  = STRING;
+				token.value = word.substr(1, word.size() - 2);
+				return token;
+			}
+
 			if(shouldBeIdentifier){
 				token.type = IDENTIFIER;
 				token.value = word;
@@ -133,17 +137,38 @@ vector<Token> tokenizeLine(string line) {
 
 	line += " ";
 	string word = "";
+
 	for (int i=0; i < (int)line.size(); i++){
 		char ch = line[i];
 		
-		if (ch == 32 || ch == '\t' || ch == ',' || ch == '\n'){
-			if (word.size() == 0) continue;
+		if (ch == '\"'){
+			if (word != "") {
+				printerr("syntax error!");
+				exit(-1);
+			}
 
+			word += line[i];
+			while(i < (int)line.size()){
+				word += line[++i];
+				if(line[i] == '\"' || line[i] == '\n'){
+					//TODO: string is found now check validity of the string
+					Token token = tokenizeWord(word);
+					tokens.push_back(token);
+					word = "";
+					break;
+				}
+			}
+
+		}
+		else if (ch == 32 || ch == '\t' || ch == ',' || ch == '\n'){
+
+			if (word.size() == 0) continue;
 			if (word.rfind("//", 0) == 0) return tokens;	
 
 			Token token = tokenizeWord(word);
 			tokens.push_back(token);
 			word = "";
+
 		}else {
 			word += ch;
 		}
@@ -266,6 +291,10 @@ void execute(vector<Token> program){
 			KeywordCode kc = (KeywordCode)std::stoi(token.value);
 			switch(kc){
 				case PRINT:{
+					if (context.memory.size() <= 0) {
+						printerr("No data available to print");
+						exit(-1);
+					}
 					Chunk prevData = pop(context.memory);
 					println(prevData.value);
 					break;	
