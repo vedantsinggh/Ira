@@ -44,7 +44,9 @@ enum OperatorCode {
 enum KeywordCode {
 	PRINT,
 	FALSE,
-	TRUE
+	TRUE,
+	IF,
+	END
 };
 
 struct Token {
@@ -55,6 +57,7 @@ struct Token {
 	};
 
 	Position position;
+	int pair; //this contains position of pair of this keyword
 	string value;
 };
 
@@ -110,7 +113,7 @@ bool isValidFloat(std::string& str)
 vector<string> identifiers;
 bool shouldBeIdentifier = false;
 Token tokenizeWord(string word) {
-	Token token = { INTEGER , { -1, -1}, ""};
+	Token token = { INTEGER , { -1, -1}, -1, ""};
 	if (word == ":") {
 		token.type  = OPERATOR;
 		token.value = std::to_string(ASSIGN);
@@ -148,6 +151,18 @@ Token tokenizeWord(string word) {
 	}else if(word == ">="){
 		token.type  = OPERATOR;
 		token.value = std::to_string(GTE);
+	}else if(word == "if"){
+		token.type  = KEYWORD;
+		token.value = std::to_string(IF);
+	}else if(word == "end"){
+		token.type  = KEYWORD;
+		token.value = std::to_string(END);
+	}else if(word == "true"){
+		token.type  = KEYWORD;
+		token.value = std::to_string(TRUE);
+	}else if(word == "false"){
+		token.type  = KEYWORD;
+		token.value = std::to_string(FALSE);
 	}else{
 		if (isValidNumber(word)) {
 			token.type  = INTEGER;
@@ -239,6 +254,41 @@ Chunk pop(vector<Chunk>& mem){
 	return ch;
 }
 
+void crossReference(vector<Token>& program){
+	for(int i=0; i < (int)program.size(); ++i){
+		Token token = program[i];
+		if (token.type != KEYWORD) continue;
+		switch((KeywordCode)std::stoi(token.value)){
+			case IF:{
+				int index = i + 1;
+				int innerBlocks = 0;
+
+				while(index < (int)program.size()){
+					Token newToken = program[index];
+					if (token.type != KEYWORD) continue;
+					KeywordCode code = (KeywordCode) std::stoi(newToken.value);
+					if (code == END && innerBlocks == 0){
+						program[i].pair = index;
+					}else {
+						if (code == IF){
+							innerBlocks += 1;
+						}
+						if (code == END){
+							innerBlocks -+ 1;
+						}
+					}
+					index++;
+				}
+
+				if(innerBlocks > 0){
+					printerr("Missing END!");
+					exit(-1);
+				}
+			}
+		}
+	}
+}
+
 void viewContext(const Context& context) {
     const int columnWidth = 20;
 
@@ -278,10 +328,10 @@ void viewContext(const Context& context) {
 void viewProgram(vector<Token> program){
 	const int columnWidth = 20;
     cout << "Program:" << endl;
-    cout << "| " << setw(columnWidth) << "Type" << " | " << setw(columnWidth) << "Value" << " |" << endl;
-    cout << "|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|" << endl;
+    cout << "| " << setw(columnWidth) << "Type" << " | " << setw(columnWidth) << "Value" << " |"  << setw(columnWidth) << "Pair" << " |" << endl;
+    cout << "|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|" << string(columnWidth, '_') << "_|"<< endl;
     for (const auto& f : program) {
-        cout << "| " << setw(columnWidth) << f.type << " | " << setw(columnWidth) << f.value << " |" << endl;
+        cout << "| " << setw(columnWidth) << f.type << " | " << setw(columnWidth) << f.value << " |"  << setw(columnWidth) << f.pair << " |" << endl;
     }
     cout << endl;
 }
@@ -592,6 +642,32 @@ void execute(vector<Token> program){
 					println(prevData.value);
 					break;	
 				}
+				case TRUE:{
+					Chunk chunk = {BOOL, std::to_string(TRUE)};
+					context.memory.push_back(chunk);
+					break;
+				}
+				case FALSE:{
+					Chunk chunk = {BOOL, std::to_string(FALSE)};
+					context.memory.push_back(chunk);
+					break;
+				}
+				case IF: {
+
+					Chunk prevData = pop(context.memory);
+					if (prevData.type == BOOL){
+						if(std::stoi(prevData.value) == TRUE){
+							// do nothing i guess
+						}else{
+							i = token.pair;
+							continue;
+						}
+					}
+					break;
+				}
+				case END:{
+					break;
+				}
 			}
 		}
 	}
@@ -615,6 +691,7 @@ int main(int argc, char** argv){
 		for(Token token : tokens) program.push_back(token);
 	}
 
+	crossReference(program);
 	execute(program);
 #if debug
 	viewProgram(program);
