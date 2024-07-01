@@ -46,6 +46,7 @@ enum KeywordCode {
 	FALSE,
 	TRUE,
 	IF,
+	ELSE,
 	END
 };
 
@@ -154,6 +155,9 @@ Token tokenizeWord(string word) {
 	}else if(word == "if"){
 		token.type  = KEYWORD;
 		token.value = std::to_string(IF);
+	}else if(word == "else"){
+		token.type  = KEYWORD;
+		token.value = std::to_string(ELSE);
 	}else if(word == "end"){
 		token.type  = KEYWORD;
 		token.value = std::to_string(END);
@@ -267,7 +271,35 @@ void crossReference(vector<Token>& program){
 					Token newToken = program[index];
 					if (token.type != KEYWORD) continue;
 					KeywordCode code = (KeywordCode) std::stoi(newToken.value);
-					if (code == END && innerBlocks == 0){
+					if ((code == END || code == ELSE) && innerBlocks == 0){
+						program[i].pair = index;
+						break;
+					}else {
+						if (code == IF){
+							innerBlocks += 1;
+						}
+						if (code == END){
+							innerBlocks -+ 1;
+						}
+					}
+					index++;
+				}
+
+				if(innerBlocks > 0){
+					printerr("Missing END!");
+					exit(-1);
+				}
+			}
+			break;
+			case ELSE:{
+				int index = i+1;
+				int innerBlocks = 0;
+
+				while(index < (int)program.size()){
+					Token newToken = program[index];
+					if (token.type != KEYWORD) continue;
+					KeywordCode code = (KeywordCode) std::stoi(newToken.value);
+					if ((code == END) && innerBlocks == 0){
 						program[i].pair = index;
 					}else {
 						if (code == IF){
@@ -653,7 +685,6 @@ void execute(vector<Token> program){
 					break;
 				}
 				case IF: {
-
 					Chunk prevData = pop(context.memory);
 					if (prevData.type == BOOL){
 						if(std::stoi(prevData.value) == TRUE){
@@ -663,6 +694,10 @@ void execute(vector<Token> program){
 							continue;
 						}
 					}
+					break;
+				}
+				case ELSE:{
+					i = token.pair; 
 					break;
 				}
 				case END:{
