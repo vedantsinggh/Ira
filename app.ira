@@ -1,7 +1,9 @@
-false if
-	0
+true if
+	"singh"
+	10 : x
 else
-	1
+	"vedant"
+	3 : x
 end
 print
-
+x 1 + print

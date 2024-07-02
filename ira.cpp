@@ -261,7 +261,9 @@ Chunk pop(vector<Chunk>& mem){
 void crossReference(vector<Token>& program){
 	for(int i=0; i < (int)program.size(); ++i){
 		Token token = program[i];
-		if (token.type != KEYWORD) continue;
+		if (token.type != KEYWORD){
+			continue;
+		}
 		switch((KeywordCode)std::stoi(token.value)){
 			case IF:{
 				int index = i + 1;
@@ -269,7 +271,10 @@ void crossReference(vector<Token>& program){
 
 				while(index < (int)program.size()){
 					Token newToken = program[index];
-					if (token.type != KEYWORD) continue;
+					if (newToken.type != KEYWORD){
+						index++;
+						continue;
+					}
 					KeywordCode code = (KeywordCode) std::stoi(newToken.value);
 					if ((code == END || code == ELSE) && innerBlocks == 0){
 						program[i].pair = index;
@@ -297,7 +302,10 @@ void crossReference(vector<Token>& program){
 
 				while(index < (int)program.size()){
 					Token newToken = program[index];
-					if (token.type != KEYWORD) continue;
+					if (newToken.type != KEYWORD){
+						index++;
+						continue;
+					}
 					KeywordCode code = (KeywordCode) std::stoi(newToken.value);
 					if ((code == END) && innerBlocks == 0){
 						program[i].pair = index;
@@ -316,6 +324,7 @@ void crossReference(vector<Token>& program){
 					printerr("Missing END!");
 					exit(-1);
 				}
+			break;
 			}
 		}
 	}
@@ -323,6 +332,19 @@ void crossReference(vector<Token>& program){
 
 void viewContext(const Context& context) {
     const int columnWidth = 20;
+
+    auto tokenTypeToString = [](TokenType type) -> string {
+        switch (type) {
+            case INTEGER: return "INTEGER";
+            case FLOAT: return "FLOAT";
+            case STRING: return "STRING";
+            case BOOL: return "BOOL";
+            case IDENTIFIER: return "IDENTIFIER";
+            case OPERATOR: return "OPERATOR";
+            case KEYWORD: return "KEYWORD";
+            default: return "UNKNOWN";
+        }
+    };
 
     cout << "Floats:" << endl;
     cout << "| " << setw(columnWidth) << "Name" << " | " << setw(columnWidth) << "Value" << " |" << endl;
@@ -352,18 +374,32 @@ void viewContext(const Context& context) {
     cout << "| " << setw(columnWidth) << "Type" << " | " << setw(columnWidth) << "Value" << " |" << endl;
     cout << "|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|" << endl;
     for (const auto& m : context.memory) {
-        cout << "| " << setw(columnWidth) << m.type << " | " << setw(columnWidth) << m.value << " |" << endl;
+        cout << "| " << setw(columnWidth) << tokenTypeToString(m.type) << " | " << setw(columnWidth) << m.value << " |" << endl;
     }
     cout << endl;
 }
 
-void viewProgram(vector<Token> program){
-	const int columnWidth = 20;
+void viewProgram(const vector<Token>& program) {
+    const int columnWidth = 20;
+
+    auto tokenTypeToString = [](TokenType type) -> string {
+        switch (type) {
+            case INTEGER: return "INTEGER";
+            case FLOAT: return "FLOAT";
+            case STRING: return "STRING";
+            case BOOL: return "BOOL";
+            case IDENTIFIER: return "IDENTIFIER";
+            case OPERATOR: return "OPERATOR";
+            case KEYWORD: return "KEYWORD";
+            default: return "UNKNOWN";
+        }
+    };
+
     cout << "Program:" << endl;
-    cout << "| " << setw(columnWidth) << "Type" << " | " << setw(columnWidth) << "Value" << " |"  << setw(columnWidth) << "Pair" << " |" << endl;
-    cout << "|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|" << string(columnWidth, '_') << "_|"<< endl;
-    for (const auto& f : program) {
-        cout << "| " << setw(columnWidth) << f.type << " | " << setw(columnWidth) << f.value << " |"  << setw(columnWidth) << f.pair << " |" << endl;
+    cout << "| " << setw(columnWidth) << "Type" << " | " << setw(columnWidth) << "Value" << " |" << setw(columnWidth) << "Pair" << " |" << endl;
+    cout << "|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|_" << string(columnWidth, '_') << "_|" << endl;
+    for (const auto& token : program) {
+        cout << "| " << setw(columnWidth) << tokenTypeToString(token.type) << " | " << setw(columnWidth) << token.value << " |" << setw(columnWidth) << token.pair << " |" << endl;
     }
     cout << endl;
 }
@@ -702,6 +738,10 @@ void execute(vector<Token> program){
 				}
 				case END:{
 					break;
+				}
+				default:{
+					printerr("how did unrecognised keyword came here?");
+					exit(-1);
 				}
 			}
 		}
